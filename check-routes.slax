@@ -1,0 +1,37 @@
+/*
+* check-routes.slax
+* Written by: Justin Ryburn (jryburn@juniper.net)
+* Last update: 11/20/09
+* This script grabs the count of routes advertised to a peer and stores that
+* data in the Junos Utility MIB.
+*/
+
+version 1.0;
+
+ns junos = "http://xml.juniper.net/junos/*/junos";
+ns xnm = "http://xml.juniper.net/xnm/1.1/xnm";
+ns jcs = "http://xml.juniper.net/junos/commit-scripts/1.0";
+ns ext = "http://xmlsoft.org/XSLT/namespace";
+
+import "../import/junos.xsl";
+
+match / {
+     <op-script-results> {
+		var $cmd = <get-bgp-neighbor-information> {
+			<neighbor-address> "2610::10:0:4:6";
+		}
+
+		var $out = jcs:invoke($cmd);
+
+		for-each ($out/bgp-peer/bgp-rib) {
+			var $adv = advertised-prefix-count;
+
+		var $rpc = <request-snmp-utility-mib-set> {
+			<object-type> "integer";
+			<instance> "adv-routes";
+			<object-value> $adv;
+		}
+		var $res = jcs:invoke($rpc);
+		}
+	}
+}
